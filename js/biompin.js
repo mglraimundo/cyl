@@ -198,10 +198,6 @@ export async function loadBiomPIN() {
 
         const data = await response.json();
 
-        if (!data.success) {
-            throw new Error(data.message || 'API returned unsuccessful response');
-        }
-
         if (!data.data?.patient || !data.data?.right_eye || !data.data?.left_eye) {
             throw new Error('Invalid response structure from API');
         }
@@ -255,8 +251,8 @@ export function processBiomDataResponse(apiResponse, options = {}) {
     if (data.patient.name) {
         els.patientName.value = data.patient.name;
     }
-    if (data.patient.patient_id) {
-        els.patientId.value = data.patient.patient_id;
+    if (data.patient.id) {
+        els.patientId.value = data.patient.id;
     }
 
     // Show PK section if data exists
@@ -338,10 +334,6 @@ export async function uploadBiometryFile() {
         const apiResponse = await response.json();
 
         // Validate response structure
-        if (!apiResponse.success) {
-            throw new Error(apiResponse.message || 'API returned success: false');
-        }
-
         if (!apiResponse.data || !apiResponse.data.patient || !apiResponse.data.right_eye || !apiResponse.data.left_eye) {
             throw new Error('Invalid response structure: missing required data fields');
         }
@@ -350,7 +342,7 @@ export async function uploadBiometryFile() {
         processBiomDataResponse(apiResponse, { displayPin: true, source: 'upload' });
 
         // Store biomPin for after loading state is cleared
-        const biomPin = apiResponse.metadata?.biompin?.pin;
+        const biomPin = apiResponse.biompin?.pin;
 
         // Clear loading state before switching tabs (switchTab checks isUploadingFile)
         setFileUploadLoadingState(false);
