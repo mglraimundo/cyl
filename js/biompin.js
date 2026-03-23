@@ -282,12 +282,12 @@ export function handleFileSelection(event) {
     }
 
     // Validate file type
-    const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.bmp'];
+    const validExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.json'];
     const fileName = file.name.toLowerCase();
     const isValid = validExtensions.some(ext => fileName.endsWith(ext));
 
     if (!isValid) {
-        showBiomPinMessage('Invalid file type. Please upload PDF or image (JPG, PNG, GIF, BMP).', 'error');
+        showBiomPinMessage('Invalid file type. Please upload PDF, image (JPG, PNG, GIF, BMP) or JSON.', 'error');
         state.selectedFile = null;
         return;
     }
