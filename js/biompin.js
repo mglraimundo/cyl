@@ -1,5 +1,5 @@
 /**
- * BiomCYL BiomPIN Module
+ * CYL BiomPIN Module
  * Contains BiomPIN API integration, file upload, and data population
  */
 

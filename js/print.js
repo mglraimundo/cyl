@@ -1,5 +1,5 @@
 /**
- * BiomCYL Print Module
+ * CYL Print Module
  * Contains print functionality for reports
  */
 

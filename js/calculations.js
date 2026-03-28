@@ -1,5 +1,5 @@
 /**
- * BiomCYL Calculations Module
+ * CYL Calculations Module
  * Contains constants, utility functions, and calculation logic
  */
 

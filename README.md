@@ -1,4 +1,4 @@
-# BiomCYL
+# CYL
 
 A web-based corneal astigmatism analyser.
 
@@ -10,11 +10,11 @@ A web-based corneal astigmatism analyser.
 - **Savini Optimized Astigmatism**: Savini method for calculating PCA adjusted optimized astigmatism using Placido-disk regression coefficients (ΔSO)
 - **Abulafia-Koch Regression**: Abulafia-Koch regression method for calculating PCA adjusted optimized astigmatism (ΔAK)
 - **BiomAPI Integration**:
-Easily load biometry data using a BiomPIN to autofill BiomCYL.
+Easily load biometry data using a BiomPIN to autofill CYL.
 
 ## Live Website
 
-Visit: https://cyl.biomapi.com
+Visit: https://cyl.mraimundo.com
 
 ## License
 
@@ -22,4 +22,4 @@ Developed by Miguel Raimundo
 
 ## Contributing
 
-Issues and pull requests are welcome at https://github.com/mglraimundo/BiomCYL
+Issues and pull requests are welcome at https://github.com/mglraimundo/cyl
