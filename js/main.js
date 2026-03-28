@@ -1,5 +1,5 @@
 /**
- * BiomCYL Main Entry Point
+ * CYL Main Entry Point
  * Wires up event listeners, initialization, and global exports
  */
 

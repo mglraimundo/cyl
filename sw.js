@@ -1,5 +1,5 @@
 const CACHE_VERSION = '1.0.2';
-const CACHE_NAME = `biomcyl-v${CACHE_VERSION}`;
+const CACHE_NAME = `cyl-v${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
   '/',

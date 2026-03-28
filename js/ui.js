@@ -1,5 +1,5 @@
 /**
- * BiomCYL UI Module
+ * CYL UI Module
  * Contains state management, DOM cache, and UI functions
  */
 

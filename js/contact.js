@@ -1,5 +1,5 @@
 /**
- * BiomCYL Contact Module
+ * CYL Contact Module
  * Contains contact modal functionality
  */
 
