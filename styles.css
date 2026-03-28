@@ -8,6 +8,11 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* iOS PWA: extend header behind the status bar */
+header {
+    padding-top: calc(1rem + env(safe-area-inset-top));
+}
+
 * {
     -webkit-tap-highlight-color: transparent;
 }
