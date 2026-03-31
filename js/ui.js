@@ -106,6 +106,11 @@ export const els = {
     biomApiLinkContainer: document.getElementById('biomApiLinkContainer'),
     biomApiLink: document.getElementById('biomApiLink'),
 
+    // History elements
+    historySection: document.getElementById('historySection'),
+    historySearch: document.getElementById('historySearch'),
+    historyList: document.getElementById('historyList'),
+
     // Print Elements
     printHeader: document.getElementById('printHeader'),
     printPatientName: document.getElementById('printPatientName'),

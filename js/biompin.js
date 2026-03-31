@@ -208,6 +208,7 @@ export async function loadBiomPIN() {
         state.currentBiomPin = pin;
         updateBiomApiLink(pin);
         updateUrlWithPin(pin);
+        addToHistory(pin, data.data.patient, data.biompin?.expires_at, data.biompin?.db_id);
 
     } catch (error) {
         console.error('BiomPIN load error:', error);
@@ -354,6 +355,7 @@ export async function uploadBiometryFile() {
             if (els.biomPinInput) els.biomPinInput.value = biomPin;
             updateBiomApiLink(biomPin);
             updateUrlWithPin(biomPin);
+            addToHistory(biomPin, apiResponse.data.patient, apiResponse.biompin?.expires_at, apiResponse.biompin?.db_id);
         }
 
     } catch (error) {
@@ -431,6 +433,127 @@ export function handleBiomPinPaste(e) {
         e.preventDefault();
         els.biomPinInput.value = pin;
     }
+}
+
+// ==========================================
+// HISTORY FUNCTIONS (local localStorage)
+// ==========================================
+
+const HISTORY_KEY = 'cyl_history';
+const HISTORY_MAX = 50;
+
+let _historyEntries = [];
+
+function loadStoredEntries() {
+    try {
+        return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]');
+    } catch {
+        return [];
+    }
+}
+
+function saveEntries(entries) {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
+}
+
+function pruneStaleEntries(currentDbId) {
+    const before = _historyEntries.length;
+    _historyEntries = _historyEntries.filter(e => !e.db_id || e.db_id === currentDbId);
+    if (_historyEntries.length !== before) saveEntries(_historyEntries);
+}
+
+export async function initHistory() {
+    _historyEntries = loadStoredEntries();
+    try {
+        const res = await fetch('https://biomapi.com/api/v1/status', { headers: { 'Accept': 'application/json' } });
+        if (res.ok) {
+            const { db_id } = await res.json();
+            if (db_id) pruneStaleEntries(db_id);
+        }
+    } catch {
+        // Network unavailable — keep existing entries as-is
+    }
+    renderHistory();
+}
+
+function addToHistory(pin, patient, expiresAt, dbId) {
+    _historyEntries = _historyEntries.filter(e => e.pin !== pin);
+    _historyEntries.unshift({
+        pin,
+        patient_name: patient?.name ?? '',
+        patient_id:   patient?.id   ?? '',
+        expires_at:   expiresAt ?? null,
+        db_id:        dbId ?? null,
+        added_at:     Date.now(),
+    });
+    if (_historyEntries.length > HISTORY_MAX) _historyEntries = _historyEntries.slice(0, HISTORY_MAX);
+    saveEntries(_historyEntries);
+    renderHistory();
+}
+
+function esc(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderHistoryList(query) {
+    const q = query.trim().toLowerCase();
+    const filtered = q
+        ? _historyEntries.filter(e =>
+            (e.patient_name ?? '').toLowerCase().includes(q) ||
+            (e.patient_id   ?? '').toLowerCase().includes(q)
+          )
+        : _historyEntries;
+
+    els.historyList.innerHTML = filtered.map(e => {
+        const name = esc(e.patient_name || e.pin);
+        const id   = e.patient_id ? ` <span class="text-gray-400 font-normal">(${esc(e.patient_id)})</span>` : '';
+        return `
+            <li class="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
+                <button onclick="loadFromHistory('${e.pin}')" class="flex-1 text-left min-w-0">
+                    <span class="text-sm font-medium text-gray-800 truncate block">${name}${id}</span>
+                    <span class="text-xs text-gray-400 font-mono truncate block">${e.pin}</span>
+                </button>
+                <button onclick="removeFromHistory('${e.pin}')" class="text-gray-300 hover:text-red-400 transition-colors shrink-0 p-1" aria-label="Remove">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </li>
+        `;
+    }).join('');
+}
+
+export function renderHistory() {
+    if (!els.historySection || !els.historyList) return;
+    if (!_historyEntries.length) {
+        els.historySection.classList.add('hidden');
+        return;
+    }
+    els.historySection.classList.remove('hidden');
+    renderHistoryList(els.historySearch?.value ?? '');
+}
+
+export function filterHistory(query) {
+    if (!_historyEntries.length) return;
+    renderHistoryList(query);
+}
+
+export async function loadFromHistory(pin) {
+    switchTab('biompin');
+    els.biomPinInput.value = pin;
+    await loadBiomPIN();
+}
+
+export function removeFromHistory(pin) {
+    _historyEntries = _historyEntries.filter(e => e.pin !== pin);
+    saveEntries(_historyEntries);
+    renderHistory();
+}
+
+export function clearHistory() {
+    _historyEntries = [];
+    saveEntries(_historyEntries);
+    renderHistory();
 }
 
 /**

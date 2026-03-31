@@ -13,7 +13,12 @@ import {
     populateEyeData,
     handleFileSelection,
     handleBiomPinPaste,
-    checkUrlForBiomPin
+    checkUrlForBiomPin,
+    initHistory,
+    loadFromHistory,
+    removeFromHistory,
+    clearHistory,
+    filterHistory,
 } from './biompin.js';
 import { printReport } from './print.js';
 import { openContactModal, closeContactModal, initContactForm } from './contact.js';
@@ -74,6 +79,9 @@ calculate();
 // Check for BiomPIN in URL and auto-load
 checkUrlForBiomPin();
 
+// Initialize local history
+initHistory();
+
 // ==========================================
 // GLOBAL EXPORTS
 // (Required for onclick handlers in HTML)
@@ -88,3 +96,7 @@ window.switchTab = switchTab;
 window.uploadBiometryFile = uploadBiometryFile;
 window.openContactModal = openContactModal;
 window.closeContactModal = closeContactModal;
+window.loadFromHistory = loadFromHistory;
+window.removeFromHistory = removeFromHistory;
+window.clearHistory = clearHistory;
+window.filterHistory = filterHistory;

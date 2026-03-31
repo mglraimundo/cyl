@@ -184,6 +184,17 @@
                 <!-- Shared Message Area -->
                     <div id="biomPinMessage" role="status" aria-live="polite" class="hidden text-xs px-3 py-2 rounded-lg"></div>
                 </div>
+
+                <!-- History Section (shown only when entries exist) -->
+                <div id="historySection" class="hidden mt-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Recent</span>
+                        <button onclick="clearHistory()" class="text-xs text-gray-400 hover:text-red-500 transition-colors">Clear all</button>
+                    </div>
+                    <input id="historySearch" type="text" placeholder="Search by name or ID" oninput="filterHistory(this.value)"
+                        class="w-full mb-2 py-1.5 px-3 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 placeholder-gray-400 outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-200 transition-all">
+                    <ul id="historyList" class="space-y-1"></ul>
+                </div>
             </section>
 
             <!-- Patient Section -->
