@@ -1,0 +1,11 @@
+{
+  "name": "cyl",
+  "version": "1.1.0",
+  "description": "Corneal Astigmatism Analyser",
+  "scripts": {
+    "build:css": "npx tailwindcss -i css/tailwind.input.css -o css/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}
