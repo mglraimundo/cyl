@@ -441,8 +441,10 @@ export function handleBiomPinPaste(e) {
 
 const HISTORY_KEY = 'cyl_history';
 const HISTORY_MAX = 50;
+const HISTORY_PREVIEW = 5;
 
 let _historyEntries = [];
+let _historyExpanded = false;
 
 function loadStoredEntries() {
     try {
@@ -458,7 +460,11 @@ function saveEntries(entries) {
 
 function pruneStaleEntries(currentDbId) {
     const before = _historyEntries.length;
-    _historyEntries = _historyEntries.filter(e => !e.db_id || e.db_id === currentDbId);
+    const now = Date.now();
+    _historyEntries = _historyEntries.filter(e =>
+        (!e.db_id || e.db_id === currentDbId) &&
+        (!e.expires_at || new Date(e.expires_at).getTime() > now)
+    );
     if (_historyEntries.length !== before) saveEntries(_historyEntries);
 }
 
@@ -488,6 +494,7 @@ function addToHistory(pin, patient, expiresAt, dbId) {
     });
     if (_historyEntries.length > HISTORY_MAX) _historyEntries = _historyEntries.slice(0, HISTORY_MAX);
     saveEntries(_historyEntries);
+    _historyExpanded = false;
     renderHistory();
 }
 
@@ -497,14 +504,18 @@ function esc(str) {
 
 function renderHistoryList(query) {
     const q = query.trim().toLowerCase();
-    const filtered = q
+    const isSearching = q.length > 0;
+    const filtered = isSearching
         ? _historyEntries.filter(e =>
             (e.patient_name ?? '').toLowerCase().includes(q) ||
             (e.patient_id   ?? '').toLowerCase().includes(q)
           )
         : _historyEntries;
 
-    els.historyList.innerHTML = filtered.map(e => {
+    const truncated = !isSearching && !_historyExpanded && filtered.length > HISTORY_PREVIEW;
+    const visible = truncated ? filtered.slice(0, HISTORY_PREVIEW) : filtered;
+
+    const items = visible.map(e => {
         const name = esc(e.patient_name || e.pin);
         const id   = e.patient_id ? ` <span class="text-gray-400 font-normal">(${esc(e.patient_id)})</span>` : '';
         return `
@@ -521,6 +532,12 @@ function renderHistoryList(query) {
             </li>
         `;
     }).join('');
+
+    const showAllBtn = truncated
+        ? `<li><button onclick="expandHistory()" class="w-full text-center text-xs text-blue-500 hover:text-blue-700 py-2 transition-colors">Show all (${filtered.length})</button></li>`
+        : '';
+
+    els.historyList.innerHTML = items + showAllBtn;
 }
 
 export function renderHistory() {
@@ -536,6 +553,11 @@ export function renderHistory() {
 export function filterHistory(query) {
     if (!_historyEntries.length) return;
     renderHistoryList(query);
+}
+
+export function expandHistory() {
+    _historyExpanded = true;
+    renderHistoryList(els.historySearch?.value ?? '');
 }
 
 export async function loadFromHistory(pin) {

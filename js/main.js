@@ -19,6 +19,7 @@ import {
     removeFromHistory,
     clearHistory,
     filterHistory,
+    expandHistory,
 } from './biompin.js';
 import { printReport } from './print.js';
 import { openContactModal, closeContactModal, initContactForm } from './contact.js';
@@ -100,3 +101,4 @@ window.loadFromHistory = loadFromHistory;
 window.removeFromHistory = removeFromHistory;
 window.clearHistory = clearHistory;
 window.filterHistory = filterHistory;
+window.expandHistory = expandHistory;
