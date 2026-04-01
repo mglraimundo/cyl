@@ -1,4 +1,4 @@
-const CACHE_VERSION = '1.1.3';
+const CACHE_VERSION = '1.1.4';
 const CACHE_NAME = `cyl-v${CACHE_VERSION}`;
 
 const PRECACHE_ASSETS = [
