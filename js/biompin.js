@@ -293,10 +293,10 @@ export function handleFileSelection(event) {
         return;
     }
 
-    // Check file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024;
+    // Check file size (15MB limit)
+    const maxSize = 15 * 1024 * 1024;
     if (file.size > maxSize) {
-        showBiomPinMessage('File too large. Maximum size is 10MB.', 'error');
+        showBiomPinMessage('File too large. Maximum size is 15MB.', 'error');
         state.selectedFile = null;
         return;
     }
