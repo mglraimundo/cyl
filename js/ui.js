@@ -10,11 +10,13 @@ export const state = {
     isMeasuredVisible: false,
     selectedEye: null,
     cachedBiomData: null,
+    rawApiResponse: null,
     isLoadingBiomPin: false,
     activeTab: 'fileupload',
     selectedFile: null,
     isUploadingFile: false,
-    currentBiomPin: null
+    currentBiomPin: null,
+    jsonViewMode: false
 };
 
 // ==========================================
@@ -118,7 +120,14 @@ export const els = {
     printSelectedEye: document.getElementById('printSelectedEye'),
     printEyeContainer: document.getElementById('printEyeContainer'),
     printDate: document.getElementById('printDate'),
-    printButtonContainer: document.getElementById('printButtonContainer')
+    printButtonContainer: document.getElementById('printButtonContainer'),
+
+    // JSON View Elements
+    jsonViewSection: document.getElementById('jsonViewSection'),
+    jsonViewPre: document.getElementById('jsonViewPre'),
+    jsonViewToggle: document.getElementById('jsonViewToggle'),
+    jsonCopyBtn: document.getElementById('jsonCopyBtn'),
+    jsonCopyBtnText: document.getElementById('jsonCopyBtnText')
 };
 
 // ==========================================
@@ -219,6 +228,54 @@ export function switchTab(tab) {
         els.tabBiomPin?.classList.add('bg-white', 'text-gray-600', 'border-2', 'border-gray-200');
         els.tabBiomPin?.setAttribute('aria-selected', 'false');
     }
+}
+
+// ==========================================
+// JSON VIEW MODE
+// ==========================================
+
+/**
+ * Renders state.cachedBiomData as prettified JSON, or an empty-state message.
+ */
+export function renderJsonView() {
+    if (!els.jsonViewPre) return;
+    if (state.rawApiResponse) {
+        els.jsonViewPre.textContent = JSON.stringify(state.rawApiResponse, null, 2);
+        els.jsonViewPre.classList.remove('text-gray-400', 'italic');
+        if (els.jsonCopyBtn) els.jsonCopyBtn.disabled = false;
+    } else {
+        els.jsonViewPre.textContent = 'No BiomAPI data loaded yet.';
+        els.jsonViewPre.classList.add('text-gray-400', 'italic');
+        if (els.jsonCopyBtn) els.jsonCopyBtn.disabled = true;
+    }
+}
+
+/**
+ * Turns JSON view mode on/off; syncs body class, URL (?view=json), and toggle label.
+ * @param {boolean} on
+ */
+export function setJsonViewMode(on) {
+    state.jsonViewMode = !!on;
+    document.body.classList.toggle('json-mode', state.jsonViewMode);
+
+    const url = new URL(window.location.href);
+    if (state.jsonViewMode) {
+        url.searchParams.set('view', 'json');
+    } else {
+        url.searchParams.delete('view');
+    }
+    const qs = url.searchParams.toString();
+    window.history.replaceState({}, '', qs ? `${url.pathname}?${qs}` : url.pathname);
+
+    if (els.jsonViewToggle) {
+        els.jsonViewToggle.textContent = state.jsonViewMode ? '← Calculator' : '{ } JSON';
+    }
+
+    renderJsonView();
+}
+
+export function toggleJsonView() {
+    setJsonViewMode(!state.jsonViewMode);
 }
 
 /**

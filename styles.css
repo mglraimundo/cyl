@@ -321,6 +321,14 @@ header {
     line-height: 1.5;
 }
 
+/* ========================================
+   JSON View Mode
+   ======================================== */
+
+.json-only { display: none; }
+body.json-mode .json-only { display: block; }
+body.json-mode .json-hide { display: none !important; }
+
 /* Contact Modal Animation */
 #contactModal:not(.hidden) > div:last-child > div {
     animation: modalIn 0.15s ease-out;

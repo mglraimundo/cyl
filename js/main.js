@@ -4,7 +4,7 @@
  */
 
 // Import all modules
-import { els, state, toggleMeasured, resetAndHidePK, selectEye, switchTab, setPopulateEyeDataCallback } from './ui.js';
+import { els, state, toggleMeasured, resetAndHidePK, selectEye, switchTab, setPopulateEyeDataCallback, setJsonViewMode, toggleJsonView } from './ui.js';
 import { calculate, syncAxis, normalizeDecimalInput } from './calculations.js';
 import {
     loadBiomPIN,
@@ -67,6 +67,22 @@ if (els.biometryFileInput) {
     els.biometryFileInput.addEventListener('change', handleFileSelection);
 }
 
+// JSON copy-to-clipboard
+if (els.jsonCopyBtn) {
+    els.jsonCopyBtn.addEventListener('click', async () => {
+        if (!state.rawApiResponse) return;
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(state.rawApiResponse, null, 2));
+            if (els.jsonCopyBtnText) {
+                els.jsonCopyBtnText.textContent = 'Copied';
+                setTimeout(() => { els.jsonCopyBtnText.textContent = 'Copy'; }, 1500);
+            }
+        } catch (err) {
+            console.error('Clipboard copy failed:', err);
+        }
+    });
+}
+
 // ==========================================
 // INITIALIZATION
 // ==========================================
@@ -76,6 +92,11 @@ initContactForm();
 
 // Run initial calculation
 calculate();
+
+// Apply JSON view mode from URL before loading data (prevents calculator flash)
+if (new URLSearchParams(window.location.search).get('view') === 'json') {
+    setJsonViewMode(true);
+}
 
 // Check for BiomPIN in URL and auto-load
 checkUrlForBiomPin();
@@ -102,3 +123,4 @@ window.removeFromHistory = removeFromHistory;
 window.clearHistory = clearHistory;
 window.filterHistory = filterHistory;
 window.expandHistory = expandHistory;
+window.toggleJsonView = toggleJsonView;

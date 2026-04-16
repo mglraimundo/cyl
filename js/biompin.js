@@ -3,7 +3,7 @@
  * Contains BiomPIN API integration, file upload, and data population
  */
 
-import { els, state, toggleMeasured, resetAndHidePK, selectEye, switchTab, setFileUploadLoadingState } from './ui.js';
+import { els, state, toggleMeasured, resetAndHidePK, selectEye, switchTab, setFileUploadLoadingState, renderJsonView } from './ui.js';
 import { calculate, clearResults, updateBadge, IDX_SIMK } from './calculations.js';
 
 // ==========================================
@@ -237,6 +237,8 @@ export function processBiomDataResponse(apiResponse, options = {}) {
 
     clearFormData();
 
+    state.rawApiResponse = apiResponse;
+
     const hasPK = extra_data?.posterior_keratometry?.right_eye &&
                   extra_data?.posterior_keratometry?.left_eye;
 
@@ -247,6 +249,8 @@ export function processBiomDataResponse(apiResponse, options = {}) {
         has_pk: hasPK,
         pk_data: hasPK ? extra_data.posterior_keratometry : null
     };
+
+    if (state.jsonViewMode) renderJsonView();
 
     // Populate patient info
     if (data.patient.name) {
@@ -395,6 +399,7 @@ export function handleFileUploadError(error) {
 export function resetForm() {
     // Clear BiomPIN cache and input
     state.cachedBiomData = null;
+    state.rawApiResponse = null;
     if (els.biomPinInput) els.biomPinInput.value = '';
     if (els.biomPinMessage) els.biomPinMessage.classList.add('hidden');
 
@@ -416,6 +421,8 @@ export function resetForm() {
 
     // Switch to default upload tab
     switchTab('fileupload');
+
+    if (state.jsonViewMode) renderJsonView();
 }
 
 /**
