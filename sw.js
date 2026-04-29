@@ -1,17 +1,10 @@
-const CACHE_VERSION = '1.3.2';
+const CACHE_VERSION = '1.3.3';
 const CACHE_NAME = `cyl-v${CACHE_VERSION}`;
 
+// Versioned assets (JS, CSS, manifest) are intentionally NOT precached: each release's new ?v= must miss cache and pull fresh from network.
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
-  '/styles.css',
-  '/js/main.js',
-  '/js/ui.js',
-  '/js/calculations.js',
-  '/js/biompin.js',
-  '/js/print.js',
-  '/js/contact.js',
-  '/manifest.json',
   '/icons/logo.png',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
