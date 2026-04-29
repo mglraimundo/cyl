@@ -205,28 +205,30 @@ export function switchTab(tab) {
 
     state.activeTab = tab;
 
+    const activeClasses = ['bg-white', 'shadow-sm', 'text-blue-700'];
+    const inactiveClasses = ['bg-transparent', 'text-gray-500', 'hover:text-gray-700'];
+
+    const setActive = (el) => {
+        el?.classList.add(...activeClasses);
+        el?.classList.remove(...inactiveClasses);
+        el?.setAttribute('aria-selected', 'true');
+    };
+    const setInactive = (el) => {
+        el?.classList.remove(...activeClasses);
+        el?.classList.add(...inactiveClasses);
+        el?.setAttribute('aria-selected', 'false');
+    };
+
     if (tab === 'biompin') {
         els.panelBiomPin?.classList.remove('hidden');
         els.panelFileUpload?.classList.add('hidden');
-
-        els.tabBiomPin?.classList.add('bg-blue-600', 'text-white');
-        els.tabBiomPin?.classList.remove('bg-white', 'text-gray-600', 'border-2', 'border-gray-200');
-        els.tabBiomPin?.setAttribute('aria-selected', 'true');
-
-        els.tabFileUpload?.classList.remove('bg-blue-600', 'text-white');
-        els.tabFileUpload?.classList.add('bg-white', 'text-gray-600', 'border-2', 'border-gray-200');
-        els.tabFileUpload?.setAttribute('aria-selected', 'false');
+        setActive(els.tabBiomPin);
+        setInactive(els.tabFileUpload);
     } else {
         els.panelFileUpload?.classList.remove('hidden');
         els.panelBiomPin?.classList.add('hidden');
-
-        els.tabFileUpload?.classList.add('bg-blue-600', 'text-white');
-        els.tabFileUpload?.classList.remove('bg-white', 'text-gray-600', 'border-2', 'border-gray-200');
-        els.tabFileUpload?.setAttribute('aria-selected', 'true');
-
-        els.tabBiomPin?.classList.remove('bg-blue-600', 'text-white');
-        els.tabBiomPin?.classList.add('bg-white', 'text-gray-600', 'border-2', 'border-gray-200');
-        els.tabBiomPin?.setAttribute('aria-selected', 'false');
+        setActive(els.tabFileUpload);
+        setInactive(els.tabBiomPin);
     }
 }
 
