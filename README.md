@@ -9,7 +9,7 @@ CYL serves two audiences at once:
 1. **Cataract surgeons** who need to work up corneal astigmatism for toric IOL planning — computing Savini-optimized (ΔSO) and Abulafia-Koch regression (ΔAK) deltas from keratometry, with optional posterior keratometry correction (ΔTK) from a Zeiss IOLMaster 700.
 2. **Developers** who want to see a complete, minimal, production-shaped implementation of a [BiomAPI](https://biomapi.com) client — how to retrieve biometry by PIN, upload a printout for OCR, handle URL pastes, persist a local history, and surface the parsed data without a backend.
 
-This README is the entry point for both. If you're here for the clinical tool, jump to [Live site](#live-site). If you're here to learn how to consume BiomAPI, start at [BiomAPI integration patterns](#biomapi-integration-patterns) and then read the code — the whole integration lives in [`js/biompin.js`](js/biompin.js).
+This README is the entry point for both. If you're here for the clinical tool, jump to [Live site](#live-site). If you're here to learn how to consume BiomAPI, start at [BiomAPI integration patterns](#biomapi-integration-patterns) and then read the code — the BiomAPI integration lives in [`js/biompin.js`](js/biompin.js), with reusable local history storage in [`js/biompin-history.js`](js/biompin-history.js).
 
 > **Technology preview.** CYL is not a medical device. The values it extracts from BiomAPI and the calculations it runs should be independently verified before any clinical decision. See [Disclaimer](#disclaimer).
 
@@ -79,7 +79,7 @@ Other devices may parse successfully but have not been validated — verify extr
 
 ## BiomAPI integration patterns
 
-All BiomAPI-facing code lives in [`js/biompin.js`](js/biompin.js). The file is ~600 lines and self-contained — a good starting point for anyone wiring BiomAPI into their own app. Below are the patterns CYL implements.
+All BiomAPI-facing code lives in [`js/biompin.js`](js/biompin.js). It stays dependency-free and delegates reusable browser history storage to [`js/biompin-history.js`](js/biompin-history.js). Below are the patterns CYL implements.
 
 ### PIN paste with URL stripping
 
@@ -155,7 +155,7 @@ After a successful retrieve, CYL:
 
 ### Status endpoint & stale-history pruning
 
-Before rendering history, CYL asks BiomAPI which `db_id` is current:
+CYL does not call the status endpoint on startup. Expired local history entries are pruned locally, and db-id mismatch pruning is lazy: every successful BiomPIN response is treated as the current database and prunes older mismatched entries. CYL only asks BiomAPI for status after a stored history PIN fails to load:
 
 ```js
 const res = await fetch('https://biomapi.com/api/v1/status', {
@@ -163,8 +163,6 @@ const res = await fetch('https://biomapi.com/api/v1/status', {
 });
 const { db_id } = await res.json();
 ```
-
-Any local history entry whose `db_id` differs (BiomAPI rotated its database) or whose `expires_at` has passed is pruned silently. Network failure leaves existing entries untouched — offline devices don't lose their history.
 
 ### Parsed data shape (`state.cachedBiomData`)
 
@@ -220,11 +218,11 @@ A copy-to-clipboard button in the JSON pane copies the prettified payload verbat
 
 ## Local history
 
-CYL persists every successful load into `localStorage` under the key `cyl_history`. The store is a plain JSON array of entries:
+CYL uses the standalone [`BiomPIN Local History SDK`](js/biompin-history.README.md) to persist every successful load into `localStorage` under the key `biompin_history`. The store is a plain JSON array of entries:
 
 ```js
 {
-  pin: "alpha-beta-123456",
+  biompin: "alpha-beta-123456",
   patient_name: "Doe, Jane",
   patient_id:   "12345",
   expires_at:   "2026-05-01T00:00:00Z",
@@ -242,7 +240,7 @@ Characteristics:
 - **Searchable** by patient name or ID.
 - **One-click load** — clicking an entry re-fetches from BiomAPI and repopulates the calculator.
 
-All history logic is in [`js/biompin.js`](js/biompin.js) below the `HISTORY FUNCTIONS` banner.
+Storage, expiry, lazy db-id mismatch pruning, and clearing are handled by [`js/biompin-history.js`](js/biompin-history.js). `db_id` and `expires_at` are required by the SDK because BiomAPI provides them as part of the BiomPIN metadata. CYL-specific rendering and rare failure-time BiomAPI status fetching stay in [`js/biompin.js`](js/biompin.js) below the `HISTORY FUNCTIONS` banner.
 
 ---
 
@@ -282,7 +280,7 @@ CYL is a progressive web app:
 ├── sw.js                   — service worker (precache + cache-first fetch)
 ├── manifest.json           — PWA manifest
 ├── CNAME                   — GitHub Pages domain (cyl.mraimundo.com)
-├── CLAUDE.md               — instructions for Claude Code agents
+├── AGENTS.md               — instructions for coding agents
 ├── package.json            — Tailwind build script, no runtime deps
 ├── css/
 │   ├── tailwind.input.css  — Tailwind source
@@ -291,7 +289,8 @@ CYL is a progressive web app:
 └── js/
     ├── main.js             — entry point: imports, event wiring, boot
     ├── ui.js               — shared state + DOM element cache + UI helpers + JSON view
-    ├── biompin.js          — BiomAPI integration: retrieve, upload, paste, history
+    ├── biompin.js          — BiomAPI integration: retrieve, upload, paste, history UI
+    ├── biompin-history.js  — standalone local history SDK
     ├── calculations.js     — ΔK, ΔTK (Liou-Brennan), ΔSO (Savini), ΔAK (Abulafia-Koch)
     ├── print.js            — print report layout + trigger
     └── contact.js          — contact modal + Web3Forms submission

@@ -170,8 +170,12 @@ export function clearUrlPin() {
 
 /**
  * Loads biometry data from BiomPIN API
+ * @param {Object} options - Load options
+ * @param {boolean} options.fromHistory - Whether this load was triggered by local history
  */
-export async function loadBiomPIN() {
+export async function loadBiomPIN(options = {}) {
+    const { fromHistory = false } = options;
+
     if (state.isLoadingBiomPin) return;
 
     const inputValue = els.biomPinInput.value;
@@ -212,6 +216,9 @@ export async function loadBiomPIN() {
 
     } catch (error) {
         console.error('BiomPIN load error:', error);
+        if (fromHistory) {
+            await pruneHistoryAfterFailedLoad();
+        }
         showBiomPinMessage(`Error: ${error.message}`, 'error');
     } finally {
         setLoadingState(false);
@@ -446,61 +453,43 @@ export function handleBiomPinPaste(e) {
 // HISTORY FUNCTIONS (local localStorage)
 // ==========================================
 
-const HISTORY_KEY = 'cyl_history';
-const HISTORY_MAX = 50;
 const HISTORY_PREVIEW = 5;
 
+const historyStore = window.BiomPinHistory.create();
 let _historyEntries = [];
 let _historyExpanded = false;
 
-function loadStoredEntries() {
-    try {
-        return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]');
-    } catch {
-        return [];
-    }
+export function initHistory() {
+    _historyEntries = historyStore.pruneExpired();
+    renderHistory();
 }
 
-function saveEntries(entries) {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
-}
-
-function pruneStaleEntries(currentDbId) {
-    const before = _historyEntries.length;
-    const now = Date.now();
-    _historyEntries = _historyEntries.filter(e =>
-        (!e.db_id || e.db_id === currentDbId) &&
-        (!e.expires_at || new Date(e.expires_at).getTime() > now)
-    );
-    if (_historyEntries.length !== before) saveEntries(_historyEntries);
-}
-
-export async function initHistory() {
-    _historyEntries = loadStoredEntries();
+async function pruneHistoryAfterFailedLoad() {
     try {
         const res = await fetch('https://biomapi.com/api/v1/status', { headers: { 'Accept': 'application/json' } });
         if (res.ok) {
             const { db_id } = await res.json();
-            if (db_id) pruneStaleEntries(db_id);
+            if (db_id) {
+                _historyEntries = historyStore.pruneDbIdMismatch(db_id);
+                renderHistory();
+            }
         }
     } catch {
-        // Network unavailable — keep existing entries as-is
+        // If recovery status is unavailable, keep the existing history as-is.
     }
-    renderHistory();
 }
 
 function addToHistory(pin, patient, expiresAt, dbId) {
-    _historyEntries = _historyEntries.filter(e => e.pin !== pin);
-    _historyEntries.unshift({
-        pin,
-        patient_name: patient?.name ?? '',
-        patient_id:   patient?.id   ?? '',
-        expires_at:   expiresAt ?? null,
-        db_id:        dbId ?? null,
-        added_at:     Date.now(),
+    if (!pin || !expiresAt || !dbId) return;
+
+    historyStore.add({
+        biomPin: pin,
+        patientName: patient?.name ?? '',
+        patientId: patient?.id ?? '',
+        expiresAt,
+        dbId,
     });
-    if (_historyEntries.length > HISTORY_MAX) _historyEntries = _historyEntries.slice(0, HISTORY_MAX);
-    saveEntries(_historyEntries);
+    _historyEntries = historyStore.list();
     _historyExpanded = false;
     renderHistory();
 }
@@ -510,28 +499,24 @@ function esc(str) {
 }
 
 function renderHistoryList(query) {
-    const q = query.trim().toLowerCase();
-    const isSearching = q.length > 0;
-    const filtered = isSearching
-        ? _historyEntries.filter(e =>
-            (e.patient_name ?? '').toLowerCase().includes(q) ||
-            (e.patient_id   ?? '').toLowerCase().includes(q)
-          )
-        : _historyEntries;
+    const isSearching = query.trim().length > 0;
+    const filtered = isSearching ? historyStore.search(query) : _historyEntries;
 
     const truncated = !isSearching && !_historyExpanded && filtered.length > HISTORY_PREVIEW;
     const visible = truncated ? filtered.slice(0, HISTORY_PREVIEW) : filtered;
 
     const items = visible.map(e => {
-        const name = esc(e.patient_name || e.pin);
+        const pin = extractBiomPIN(e.biompin);
+        if (!pin) return '';
+        const name = esc(e.patient_name || pin);
         const id   = e.patient_id ? ` <span class="text-gray-400 font-normal">(${esc(e.patient_id)})</span>` : '';
         return `
             <li class="flex items-center gap-2 py-2 px-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors">
-                <button onclick="loadFromHistory('${e.pin}')" class="flex-1 text-left min-w-0">
+                <button onclick="loadFromHistory('${pin}')" class="flex-1 text-left min-w-0">
                     <span class="text-sm font-medium text-gray-800 truncate block">${name}${id}</span>
-                    <span class="text-xs text-gray-400 font-mono truncate block">${e.pin}</span>
+                    <span class="text-xs text-gray-400 font-mono truncate block">${esc(pin)}</span>
                 </button>
-                <button onclick="removeFromHistory('${e.pin}')" class="text-gray-300 hover:text-red-400 transition-colors shrink-0 p-1" aria-label="Remove">
+                <button onclick="removeFromHistory('${pin}')" class="text-gray-300 hover:text-red-400 transition-colors shrink-0 p-1" aria-label="Remove">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
                     </svg>
@@ -551,6 +536,7 @@ export function renderHistory() {
     if (!els.historySection || !els.historyList) return;
     if (!_historyEntries.length) {
         els.historySection.classList.add('hidden');
+        els.historyList.innerHTML = '';
         return;
     }
     els.historySection.classList.remove('hidden');
@@ -570,18 +556,16 @@ export function expandHistory() {
 export async function loadFromHistory(pin) {
     switchTab('biompin');
     els.biomPinInput.value = pin;
-    await loadBiomPIN();
+    await loadBiomPIN({ fromHistory: true });
 }
 
 export function removeFromHistory(pin) {
-    _historyEntries = _historyEntries.filter(e => e.pin !== pin);
-    saveEntries(_historyEntries);
+    _historyEntries = historyStore.clearOne(pin);
     renderHistory();
 }
 
 export function clearHistory() {
-    _historyEntries = [];
-    saveEntries(_historyEntries);
+    _historyEntries = historyStore.clearAll();
     renderHistory();
 }
 
